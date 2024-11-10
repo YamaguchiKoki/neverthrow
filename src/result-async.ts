@@ -19,6 +19,7 @@ import {
   InferOkTypes,
 } from './_internals/utils'
 
+// PromiseLike->thenメソッドの実装を強制。Promiseのように扱えるようになる。
 export class ResultAsync<T, E> implements PromiseLike<Result<T, E>> {
   private _promise: Promise<Result<T, E>>
 
@@ -26,6 +27,7 @@ export class ResultAsync<T, E> implements PromiseLike<Result<T, E>> {
     this._promise = res
   }
 
+  // PromiseオブジェクトからResultAsyncオブジェクトを生成する。ただし引数に取るPromiseがrejectされても補足しない。
   static fromSafePromise<T, E = never>(promise: PromiseLike<T>): ResultAsync<T, E>
   static fromSafePromise<T, E = never>(promise: Promise<T>): ResultAsync<T, E> {
     const newPromise = promise.then((value: T) => new Ok<T, E>(value))
@@ -33,6 +35,7 @@ export class ResultAsync<T, E> implements PromiseLike<Result<T, E>> {
     return new ResultAsync(newPromise)
   }
 
+  // PromiseオブジェクトからResultAsyncオブジェクトを生成する。引数に取るPromiseがrejectされた場合はerrorFnを適用してErrオブジェクトを生成する。
   static fromPromise<T, E>(promise: PromiseLike<T>, errorFn: (e: unknown) => E): ResultAsync<T, E>
   static fromPromise<T, E>(promise: Promise<T>, errorFn: (e: unknown) => E): ResultAsync<T, E> {
     const newPromise = promise
@@ -42,6 +45,8 @@ export class ResultAsync<T, E> implements PromiseLike<Result<T, E>> {
     return new ResultAsync(newPromise)
   }
 
+  // 例外をスローする可能性がある関数と、エラー発生時に実行する関数を部分適用し、
+  // ResultAsyncオブジェクト内で非同期的に実行して結果をラップして返す。
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   static fromThrowable<A extends readonly any[], R, E>(
     fn: (...args: A) => Promise<R>,
